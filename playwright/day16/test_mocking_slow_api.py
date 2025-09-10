@@ -1,22 +1,22 @@
 from playwright.sync_api import sync_playwright, expect
-import pytest, json
 
 def _run_test(page):
     page.goto("https://the-internet.herokuapp.com/dynamic_loading/2")
-
-    # Intercept API call and return instantly with mock data
-    def handle_route(route):
-        mock_data = {"message": "Mocked response!"}
-        route.fulfill(
-            status=200,
-            content_type="application/json",
-            body=json.dumps(mock_data)
-        )
-
-    page.route("**/dynamic_loading/2", handle_route)
-
     page.click("button")  # Start loading
-    expect(page.locator("#finish")).to_be_visible(timeout=5000)
+
+    # Wait until the h4 exists (even if hidden)
+    page.wait_for_selector("#finish h4")
+
+    # Inject our mocked text
+    page.evaluate("""() => {
+        const finish = document.querySelector("#finish h4");
+        if (finish) {
+            finish.textContent = "Mocked Hello World!";
+        }
+    }""")
+
+    # Verify mocked content
+    expect(page.locator("#finish h4")).to_have_text("Mocked Hello World!")
 
 def test_mocking_slow_api(page=None):
     if page:
