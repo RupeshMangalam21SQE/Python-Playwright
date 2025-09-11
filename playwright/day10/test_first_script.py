@@ -1,18 +1,19 @@
 from playwright.sync_api import sync_playwright, expect
 
-def _run_test(page):
+def _navigate_to_homepage(page):
     page.goto("https://playwright.dev/")
-    expect(page).to_have_title("Fast and reliable end-to-end testing for modern web apps | Playwright")
 
 def test_first_script(page=None):
     if page:
-        _run_test(page)
+        _navigate_to_homepage(page)
+        expect(page).to_have_title("Fast and reliable end-to-end testing for modern web apps | Playwright")
     else:
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=False)
-            page = browser.new_page()
-            _run_test(page)
-            browser.close()
+        with sync_playwright() as playwright:
+            chromium_browser = playwright.chromium.launch(headless=False)
+            homepage = chromium_browser.new_page()
+            _navigate_to_homepage(homepage)
+            expect(homepage).to_have_title("Fast and reliable end-to-end testing for modern web apps | Playwright")
+            chromium_browser.close()
 
 if __name__ == "__main__":
     test_first_script()
