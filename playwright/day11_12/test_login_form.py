@@ -1,22 +1,28 @@
 from playwright.sync_api import sync_playwright, expect
 
-def _run_test(page):
+def _perform_login(page, username="tomsmith", password="SuperSecretPassword!"):
     page.goto("https://the-internet.herokuapp.com/login")
-    page.fill("#username", "tomsmith")
-    page.fill("#password", "SuperSecretPassword!")
+    page.fill("#username", username)
+    page.fill("#password", password)
     page.click("button[type='submit']")
-    expect(page).to_have_url("https://the-internet.herokuapp.com/secure")
-    expect(page.locator("h2")).to_have_text("Secure Area")
+    return page
 
 def test_login_form(page=None):
     if page:
-        _run_test(page)
+        login_page = _perform_login(page)
+        expect(login_page).to_have_url("https://the-internet.herokuapp.com/secure")
+        expect(login_page.locator("h2")).to_have_text("Secure Area")
     else:
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=False)
-            page = browser.new_page()
-            _run_test(page)
-            browser.close()
+        with sync_playwright() as playwright:
+            chromium_browser = playwright.chromium.launch(headless=False)
+            login_page = chromium_browser.new_page()
+
+            login_page = _perform_login(login_page)
+
+            expect(login_page).to_have_url("https://the-internet.herokuapp.com/secure")
+            expect(login_page.locator("h2")).to_have_text("Secure Area")
+
+            chromium_browser.close()
 
 if __name__ == "__main__":
     test_login_form()

@@ -1,21 +1,24 @@
 from playwright.sync_api import sync_playwright, expect
 
-def _run_test(page):
+def _hover_first_figure(page):
     page.goto("https://the-internet.herokuapp.com/hovers")
     figure = page.locator(".figure").first
     figure.hover()
-    caption = figure.locator(".figcaption h5")
-    expect(caption).to_be_visible()
+    return figure.locator(".figcaption h5")
 
 def test_hover_and_click(page=None):
     if page:
-        _run_test(page)
+        caption = _hover_first_figure(page)
+        expect(caption).to_be_visible()
     else:
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=False)
-            page = browser.new_page()
-            _run_test(page)
-            browser.close()
+        with sync_playwright() as playwright:
+            chromium_browser = playwright.chromium.launch(headless=False)
+            hover_page = chromium_browser.new_page()
+
+            caption = _hover_first_figure(hover_page)
+            expect(caption).to_be_visible()
+
+            chromium_browser.close()
 
 if __name__ == "__main__":
     test_hover_and_click()

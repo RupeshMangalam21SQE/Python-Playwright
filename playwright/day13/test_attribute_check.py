@@ -1,19 +1,22 @@
 from playwright.sync_api import sync_playwright, expect
 
-def _run_test(page):
-    # Use homepage instead of broken_images
+def _get_github_ribbon_image(page):
     page.goto("https://the-internet.herokuapp.com/")
-
-    # Locate the GitHub ribbon image
-    image = page.locator("img").first
-    expect(image).to_have_attribute("src", "/img/forkme_right_green_007200.png")
+    return page.locator("img").first
 
 def test_attribute_check(page=None):
     if page:
-        _run_test(page)
+        image = _get_github_ribbon_image(page)
+        expect(image).to_have_attribute("src", "/img/forkme_right_green_007200.png")
     else:
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=False)
-            page = browser.new_page()
-            _run_test(page)
-            browser.close()
+        with sync_playwright() as playwright:
+            chromium_browser = playwright.chromium.launch(headless=False)
+            homepage = chromium_browser.new_page()
+
+            image = _get_github_ribbon_image(homepage)
+            expect(image).to_have_attribute("src", "/img/forkme_right_green_007200.png")
+
+            chromium_browser.close()
+
+if __name__ == "__main__":
+    test_attribute_check()
