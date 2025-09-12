@@ -19,8 +19,8 @@ def test_ad_requests_are_blocked(page=None):
         # Ad image exists in DOM but won't load
         expect(page.locator(".ad-banner")).to_have_count(1)
     else:
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=False)
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch(headless=False)
             test_page = browser.new_page()
 
             _block_ads(test_page)

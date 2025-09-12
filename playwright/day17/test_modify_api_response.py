@@ -35,8 +35,8 @@ def test_mock_products_api(page=None):
     if page: 
         _run_test(page)
     else:
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=False)
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch(headless=False)
             test_page = browser.new_page()
             _run_test(test_page)
             browser.close()
