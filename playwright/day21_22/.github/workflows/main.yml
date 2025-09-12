@@ -1,0 +1,85 @@
+name: Playwright Tests (Allure)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        suite: [smoke, regression]   # two test types
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip-
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('requirements.txt') }}
+          restore-keys: ${{ runner.os }}-playwright-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          playwright install chromium --with-deps
+
+      - name: Run pytest with Allure
+        run: |
+          mkdir -p reports/allure-results
+          if [[ "${{ github.event_name }}" == "pull_request" && "${{ matrix.suite }}" == "smoke" ]]; then
+            echo "Running SMOKE tests for PR..."
+            pytest -m smoke -n 2 --alluredir=reports/allure-results -v
+          elif [[ "${{ github.event_name }}" == "push" && "${{ matrix.suite }}" == "regression" ]]; then
+            echo "Running REGRESSION tests on main push..."
+            pytest -m regression -n 2 --alluredir=reports/allure-results -v
+          fi
+        continue-on-error: true  
+
+      - name: Upload Allure results artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-${{ matrix.suite }}
+          path: reports/allure-results
+          retention-days: 7
+
+  report:
+    runs-on: ubuntu-latest
+    needs: test
+    if: always()
+    steps:
+      - name: Download Allure results
+        uses: actions/download-artifact@v4
+        with:
+          name: allure-results-regression   # use regression results for main reports
+          path: allure-results
+
+      - name: Generate Allure report
+        uses: simple-elf/allure-report-action@v1
+        with:
+          allure_results: allure-results
+          allure_report: allure-report
+
+    # Uncomment if you want to deploy report on GitHub Pages
+    #   - name: Deploy report to GitHub Pages
+    #     uses: peaceiris/actions-gh-pages@v4
+    #     with:
+    #       github_token: ${{ secrets.GITHUB_TOKEN }}
+    #       publish_dir: allure-report
+    #       publish_branch: gh-pages

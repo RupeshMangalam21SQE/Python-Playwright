@@ -1,0 +1,7 @@
+pytest
+pytest-xdist
+pytest-rerunfailures
+playwright
+pytest-playwright
+allure-pytest
+pytest-asyncio
