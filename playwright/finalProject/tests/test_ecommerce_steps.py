@@ -1,13 +1,14 @@
 from pytest_bdd import given, when, then, scenarios, parsers
 from pages.login_page import LoginPage
+from config import get_base_url
 
-scenarios("features/ecommerce_workflow.feature")
-
+scenarios("../features/ecommerce_workflow.feature")
 
 @given('I am logged in to the e-commerce site', target_fixture='inventory_page')
-async def login_to_site(page):
+async def login_to_site(page, env):
+    base_url = get_base_url(env)
     login_page = LoginPage(page)
-    await login_page.navigate("https://www.saucedemo.com/")
+    await login_page.navigate(base_url)
     return await login_page.login("standard_user", "secret_sauce")
 
 

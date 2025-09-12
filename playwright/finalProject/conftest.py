@@ -4,29 +4,35 @@ import allure
 from datetime import datetime
 from playwright.async_api import async_playwright
 
-
+# Create required folders
 os.makedirs("reports/allure-results", exist_ok=True)
 os.makedirs("screenshots", exist_ok=True)
 
 
 def pytest_addoption(parser):
     parser.addoption(
-        "--headed",
-        action="store_true",
-        default=False,
-        help="Run tests in headed mode (browser UI visible)"
+        "--env",
+        action="store",
+        default="dev",
+        choices=["dev", "qa", "prod"],
+        help="Specify the environment to run tests against"
     )
 
 
-@pytest.fixture
-def headed(request):
-    return request.config.getoption("--headed")
+@pytest.fixture(scope="session")
+def env(request):
+    """Provide selected environment to tests"""
+    return request.config.getoption("--env")
 
 
 @pytest.fixture(scope="function")
-async def browser(headed):
+async def browser(pytestconfig):
+    """Launch browser based on headed/slowmo options"""
+    headed = pytestconfig.getoption("--headed")
+    slow_mo = pytestconfig.getoption("--slowmo")
+
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=not headed, slow_mo=300 if headed else 0)
+        browser = await p.chromium.launch(headless=not headed, slow_mo=slow_mo)
         yield browser
         await browser.close()
 
@@ -35,6 +41,7 @@ async def browser(headed):
 async def page(browser):
     page = await browser.new_page()
     yield page
+    # Take screenshot on failure
     if hasattr(pytest, "test_outcome") and pytest.test_outcome.get("failed"):
         try:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
